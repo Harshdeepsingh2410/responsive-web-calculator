@@ -1,45 +1,34 @@
-# Responsive Web Calculator
+# Memory Match
 
-A small, polished calculator application built for **Harshdeep Singh's** GitHub portfolio and CV. It keeps the scope approachable while showing practical front-end fundamentals: clean component structure, responsive styling, accessible controls, keyboard support, and safe arithmetic handling without `eval()`.
+A responsive memory card matching game built with vanilla HTML, CSS and JavaScript.
 
 ## Features
+- 16 cards / 8 matching pairs
+- Random Fisher-Yates shuffle
+- Card-flip animation
+- Match detection
+- Move counter
+- Timer
+- Score calculation
+- Session best score
+- Restart / Play Again
+- Responsive layout
 
-- Standard arithmetic: addition, subtraction, multiplication, division, and percentage
-- Operator precedence (for example, `2 + 3 × 4` returns `14`)
-- Division-by-zero error handling
-- Keyboard controls: digits, operators, Enter, Escape, and Backspace
-- Responsive layout for mobile and desktop
-- Accessible button labels, visible focus states, and live display updates
+## Run
+Open `index.html` in any modern browser. No installation or dependencies are required.
 
-## Technologies
-
-- HTML5
-- CSS3 (Grid, custom properties, responsive design)
-- Vanilla JavaScript (ES6+)
-
-## Run locally
-
-1. Download or clone this repository.
-2. Open `index.html` in a modern browser.
-
-No installation, build step, or external package is required.
-
-## Project structure
-
-```text
-harshdeep-calculator/
-├── index.html    # Semantic page structure and calculator controls
-├── styles.css    # Responsive visual design
-├── script.js     # Input, calculation, keyboard, and display logic
-└── README.md     # Project documentation
+## GitHub
+```bash
+git init
+git add .
+git commit -m "Add memory card matching game"
+git branch -M main
+git remote add origin YOUR_REPOSITORY_URL
+git push -u origin main
 ```
 
-## CV-ready description
-
-> Built a responsive web calculator using HTML5, CSS3, and vanilla JavaScript. Implemented arithmetic operations with operator precedence, keyboard input, input validation, division-by-zero handling, and accessible responsive UI design.
-
-**ATS keywords:** HTML5, CSS3, JavaScript, ES6+, responsive web design, DOM manipulation, event handling, input validation, accessibility, front-end development, GitHub.
-
-## Suggested GitHub repository name
-
-`responsive-web-calculator`
+## CV
+**Memory Card Matching Game | HTML, CSS, JavaScript | GitHub**
+- Developed an interactive memory card game with randomized card generation, pair-matching logic, and game-state management.
+- Implemented card-flip animations, move tracking, timer functionality, score calculation, and restart controls using JavaScript.
+- Designed a responsive user interface using HTML5, CSS3, and JavaScript DOM manipulation.

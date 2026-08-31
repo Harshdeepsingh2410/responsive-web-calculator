@@ -1,90 +1,172 @@
-"use strict";
+const SYMBOLS = ["🍎","🚀","🎮","⚡","🐼","🎵","🌟","🧩"];
 
-const expressionEl = document.querySelector("#expression");
-const resultEl = document.querySelector("#result");
-const keypad = document.querySelector(".keypad");
-const operators = ["+", "-", "*", "/"];
-let expression = "";
-let justCalculated = false;
+const board = document.getElementById("board");
+const movesEl = document.getElementById("moves");
+const timerEl = document.getElementById("timer");
+const scoreEl = document.getElementById("score");
+const bestEl = document.getElementById("best");
+const statusEl = document.getElementById("status");
+const newGameBtn = document.getElementById("newGame");
+const modal = document.getElementById("winModal");
+const winText = document.getElementById("winText");
+const playAgainBtn = document.getElementById("playAgain");
 
-function formatNumber(value) {
-  if (!Number.isFinite(value)) return "Error";
-  return Number.parseFloat(value.toFixed(10)).toLocaleString("en-US", { maximumFractionDigits: 10 });
-}
+let first = null;
+let second = null;
+let locked = false;
+let moves = 0;
+let pairs = 0;
+let seconds = 0;
+let score = 1000;
+let timer = null;
+let started = false;
 
-function updateDisplay(preview = "0") {
-  expressionEl.textContent = expression || "0";
-  resultEl.textContent = preview;
-}
+let best = Number(sessionStorage.getItem("memoryBestScore")) || 0;
+bestEl.textContent = best ? best : "—";
 
-function calculateExpression(input) {
-  const tokens = input.match(/(\d*\.?\d+|[+\-*/])/g);
-  if (!tokens || tokens.join("") !== input || operators.includes(tokens.at(-1))) return null;
-
-  const values = [Number(tokens[0])];
-  const pendingOperators = [];
-  for (let index = 1; index < tokens.length; index += 2) {
-    const operator = tokens[index];
-    const number = Number(tokens[index + 1]);
-    if (operator === "*" || operator === "/") {
-      const last = values.pop();
-      if (operator === "/" && number === 0) return "Error";
-      values.push(operator === "*" ? last * number : last / number);
-    } else {
-      pendingOperators.push(operator);
-      values.push(number);
-    }
+function shuffle(items) {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
   }
-  return values.slice(1).reduce((total, value, index) => pendingOperators[index] === "+" ? total + value : total - value, values[0]);
+  return result;
 }
 
-function appendValue(value) {
-  if (justCalculated && !operators.includes(value)) expression = "";
-  justCalculated = false;
+function formatTime(value) {
+  const m = Math.floor(value / 60).toString().padStart(2, "0");
+  const s = (value % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
 
-  const lastChar = expression.at(-1);
-  if (operators.includes(value)) {
-    if (!expression) return;
-    expression = operators.includes(lastChar) ? expression.slice(0, -1) + value : expression + value;
-  } else if (value === ".") {
-    const currentNumber = expression.split(/[+\-*/]/).at(-1);
-    if (!currentNumber.includes(".")) expression += currentNumber ? "." : "0.";
+function calculateScore() {
+  return Math.max(0, 1000 - seconds * 3 - Math.max(0, moves - 8) * 20);
+}
+
+function updateStats() {
+  score = calculateScore();
+  movesEl.textContent = moves;
+  timerEl.textContent = formatTime(seconds);
+  scoreEl.textContent = score;
+  bestEl.textContent = best || "—";
+}
+
+function startTimer() {
+  if (timer !== null) return;
+  timer = setInterval(() => {
+    seconds += 1;
+    updateStats();
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timer !== null) {
+    clearInterval(timer);
+    timer = null;
+  }
+}
+
+function makeCard(symbol) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "card";
+  button.dataset.symbol = symbol;
+  button.setAttribute("aria-label", "Hidden card");
+  button.innerHTML = `
+    <span class="inner">
+      <span class="face back" aria-hidden="true"></span>
+      <span class="face front" aria-hidden="true">${symbol}</span>
+    </span>`;
+  button.addEventListener("click", () => flipCard(button));
+  return button;
+}
+
+function flipCard(card) {
+  if (locked || card === first || card.classList.contains("matched") || card.classList.contains("flipped")) return;
+
+  if (!started) {
+    started = true;
+    startTimer();
+  }
+
+  card.classList.add("flipped");
+  card.setAttribute("aria-label", `Card showing ${card.dataset.symbol}`);
+
+  if (!first) {
+    first = card;
+    return;
+  }
+
+  second = card;
+  moves += 1;
+  updateStats();
+
+  if (first.dataset.symbol === second.dataset.symbol) {
+    first.classList.add("matched");
+    second.classList.add("matched");
+    first.disabled = true;
+    second.disabled = true;
+    pairs += 1;
+    statusEl.textContent = `Match found! ${pairs} of 8 pairs completed.`;
+    resetTurn();
+
+    if (pairs === SYMBOLS.length) finish();
   } else {
-    expression += value;
+    locked = true;
+    statusEl.textContent = "Not a match. Try again.";
+    setTimeout(() => {
+      first.classList.remove("flipped");
+      second.classList.remove("flipped");
+      first.setAttribute("aria-label", "Hidden card");
+      second.setAttribute("aria-label", "Hidden card");
+      resetTurn();
+    }, 700);
   }
-  updateDisplay();
 }
 
-function calculate() {
-  const answer = calculateExpression(expression);
-  if (answer === null) return;
-  const displayValue = answer === "Error" ? "Error" : formatNumber(answer);
-  updateDisplay(displayValue);
-  if (answer !== "Error") expression = String(answer);
-  justCalculated = true;
+function resetTurn() {
+  first = null;
+  second = null;
+  locked = false;
 }
 
-function handleAction(action) {
-  if (action === "clear") { expression = ""; justCalculated = false; updateDisplay(); }
-  if (action === "delete") { expression = expression.slice(0, -1); justCalculated = false; updateDisplay(); }
-  if (action === "calculate") calculate();
+function finish() {
+  stopTimer();
+  score = calculateScore();
+
+  if (score > best) {
+    best = score;
+    sessionStorage.setItem("memoryBestScore", String(best));
+  }
+
+  updateStats();
+  statusEl.textContent = "All pairs matched!";
+  winText.textContent = `Completed in ${moves} moves and ${formatTime(seconds)} with a score of ${score}.`;
+  modal.classList.remove("hidden");
 }
 
-keypad.addEventListener("click", (event) => {
-  const button = event.target.closest("button");
-  if (!button) return;
-  if (button.dataset.action) handleAction(button.dataset.action);
-  else if (button.dataset.value === "%") {
-    const number = expression.split(/[+\-*/]/).at(-1);
-    if (number) expression = expression.slice(0, -number.length) + String(Number(number) / 100);
-    updateDisplay();
-  } else appendValue(button.dataset.value);
-});
+function newGame() {
+  stopTimer();
+  first = null;
+  second = null;
+  locked = false;
+  moves = 0;
+  pairs = 0;
+  seconds = 0;
+  score = 1000;
+  started = false;
 
-document.addEventListener("keydown", (event) => {
-  if (/^[0-9.+\-*/]$/.test(event.key)) { event.preventDefault(); appendValue(event.key); }
-  if (event.key === "Enter" || event.key === "=") { event.preventDefault(); calculate(); }
-  if (event.key === "Backspace") { event.preventDefault(); handleAction("delete"); }
-  if (event.key === "Escape") handleAction("clear");
-  if (event.key === "%") document.querySelector('[data-value="%"]').click();
-});
+  modal.classList.add("hidden");
+  board.replaceChildren();
+
+  shuffle([...SYMBOLS, ...SYMBOLS]).forEach(symbol => {
+    board.appendChild(makeCard(symbol));
+  });
+
+  statusEl.textContent = "Find all 8 pairs.";
+  updateStats();
+}
+
+newGameBtn.addEventListener("click", newGame);
+playAgainBtn.addEventListener("click", newGame);
+newGame();
