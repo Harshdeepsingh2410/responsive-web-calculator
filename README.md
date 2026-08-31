@@ -1,69 +1,45 @@
-# 🧮 Calculator Web Application
+# Responsive Web Calculator
 
-A responsive calculator built using **HTML5, CSS3 and vanilla JavaScript**.
+A small, polished calculator application built for **Harshdeep Singh's** GitHub portfolio and CV. It keeps the scope approachable while showing practical front-end fundamentals: clean component structure, responsive styling, accessible controls, keyboard support, and safe arithmetic handling without `eval()`.
 
 ## Features
 
-- Addition, subtraction, multiplication and division
-- Decimal calculations
-- Percentage conversion
-- Clear and backspace controls
-- Keyboard support
-- Calculation history display
-- Divide-by-zero handling
-- Responsive layout for desktop and mobile
-- Accessible button labels and focus states
-- No external libraries or dependencies
+- Standard arithmetic: addition, subtraction, multiplication, division, and percentage
+- Operator precedence (for example, `2 + 3 × 4` returns `14`)
+- Division-by-zero error handling
+- Keyboard controls: digits, operators, Enter, Escape, and Backspace
+- Responsive layout for mobile and desktop
+- Accessible button labels, visible focus states, and live display updates
 
-## Tech Stack
+## Technologies
 
 - HTML5
-- CSS3
-- JavaScript (ES6+)
-- DOM Manipulation
-- Event Handling
+- CSS3 (Grid, custom properties, responsive design)
+- Vanilla JavaScript (ES6+)
 
-## Project Structure
+## Run locally
+
+1. Download or clone this repository.
+2. Open `index.html` in a modern browser.
+
+No installation, build step, or external package is required.
+
+## Project structure
 
 ```text
-calculator-web-project/
-├── index.html
-├── style.css
-├── script.js
-└── README.md
+harshdeep-calculator/
+├── index.html    # Semantic page structure and calculator controls
+├── styles.css    # Responsive visual design
+├── script.js     # Input, calculation, keyboard, and display logic
+└── README.md     # Project documentation
 ```
 
-## How to Run
+## CV-ready description
 
-No installation is required.
+> Built a responsive web calculator using HTML5, CSS3, and vanilla JavaScript. Implemented arithmetic operations with operator precedence, keyboard input, input validation, division-by-zero handling, and accessible responsive UI design.
 
-1. Download or clone the repository.
-2. Open `index.html` in a modern web browser.
+**ATS keywords:** HTML5, CSS3, JavaScript, ES6+, responsive web design, DOM manipulation, event handling, input validation, accessibility, front-end development, GitHub.
 
-You can also open the folder in VS Code and use Live Server.
+## Suggested GitHub repository name
 
-## GitHub
-
-```bash
-git init
-git add .
-git commit -m "Add calculator web application"
-git branch -M main
-git remote add origin YOUR_GITHUB_REPOSITORY_URL
-git push -u origin main
-```
-
-## CV Description
-
-**Calculator Web Application | HTML, CSS, JavaScript | GitHub**
-
-- Developed a responsive calculator web application supporting arithmetic operations, decimal calculations, percentage conversion, and error handling.
-- Implemented interactive controls, keyboard input, calculation history, and dynamic display updates using JavaScript DOM manipulation and event handling.
-- Designed a clean, responsive user interface using HTML5 and CSS3.
-
-## Future Improvements
-
-- Scientific calculator mode
-- Calculation history panel
-- Theme switcher
-- Memory functions
+`responsive-web-calculator`

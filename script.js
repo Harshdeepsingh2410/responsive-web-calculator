@@ -1,173 +1,90 @@
-const display = document.getElementById("display");
-const history = document.getElementById("history");
-const keys = document.querySelector(".keys");
+"use strict";
 
-let current = "0";
-let previous = null;
-let operator = null;
-let waitingForOperand = false;
+const expressionEl = document.querySelector("#expression");
+const resultEl = document.querySelector("#result");
+const keypad = document.querySelector(".keypad");
+const operators = ["+", "-", "*", "/"];
+let expression = "";
 let justCalculated = false;
-
-function render() {
-  display.textContent = current;
-}
 
 function formatNumber(value) {
   if (!Number.isFinite(value)) return "Error";
-  const rounded = Number.parseFloat(value.toPrecision(12));
-  return String(rounded);
+  return Number.parseFloat(value.toFixed(10)).toLocaleString("en-US", { maximumFractionDigits: 10 });
 }
 
-function calculate(a, b, op) {
-  if (op === "+") return a + b;
-  if (op === "-") return a - b;
-  if (op === "*") return a * b;
-  if (op === "/") return b === 0 ? null : a / b;
-  return b;
+function updateDisplay(preview = "0") {
+  expressionEl.textContent = expression || "0";
+  resultEl.textContent = preview;
 }
 
-function reset() {
-  current = "0";
-  previous = null;
-  operator = null;
-  waitingForOperand = false;
-  justCalculated = false;
-  history.textContent = "";
-  render();
-}
+function calculateExpression(input) {
+  const tokens = input.match(/(\d*\.?\d+|[+\-*/])/g);
+  if (!tokens || tokens.join("") !== input || operators.includes(tokens.at(-1))) return null;
 
-function inputDigit(digit) {
-  if (current === "Error" || waitingForOperand || justCalculated) {
-    current = digit;
-    waitingForOperand = false;
-    justCalculated = false;
-  } else {
-    current = current === "0" ? digit : current + digit;
-  }
-  render();
-}
-
-function inputDecimal() {
-  if (current === "Error" || waitingForOperand || justCalculated) {
-    current = "0.";
-    waitingForOperand = false;
-    justCalculated = false;
-  } else if (!current.includes(".")) {
-    current += ".";
-  }
-  render();
-}
-
-function chooseOperator(nextOperator) {
-  if (current === "Error") return reset();
-
-  const inputValue = Number(current);
-
-  if (operator && waitingForOperand) {
-    operator = nextOperator;
-    history.textContent = `${formatNumber(previous)} ${operator}`;
-    return;
-  }
-
-  if (previous === null) {
-    previous = inputValue;
-  } else if (operator) {
-    const result = calculate(previous, inputValue, operator);
-    if (result === null) {
-      current = "Error";
-      history.textContent = "Cannot divide by zero";
-      previous = null;
-      operator = null;
-      waitingForOperand = true;
-      render();
-      return;
+  const values = [Number(tokens[0])];
+  const pendingOperators = [];
+  for (let index = 1; index < tokens.length; index += 2) {
+    const operator = tokens[index];
+    const number = Number(tokens[index + 1]);
+    if (operator === "*" || operator === "/") {
+      const last = values.pop();
+      if (operator === "/" && number === 0) return "Error";
+      values.push(operator === "*" ? last * number : last / number);
+    } else {
+      pendingOperators.push(operator);
+      values.push(number);
     }
-    current = formatNumber(result);
-    previous = result;
   }
+  return values.slice(1).reduce((total, value, index) => pendingOperators[index] === "+" ? total + value : total - value, values[0]);
+}
 
-  operator = nextOperator;
-  waitingForOperand = true;
+function appendValue(value) {
+  if (justCalculated && !operators.includes(value)) expression = "";
   justCalculated = false;
-  history.textContent = `${formatNumber(previous)} ${nextOperator}`;
-  render();
-}
 
-function equals() {
-  if (operator === null || previous === null || current === "Error") return;
-
-  const a = previous;
-  const b = Number(current);
-  const result = calculate(a, b, operator);
-
-  if (result === null) {
-    current = "Error";
-    history.textContent = "Cannot divide by zero";
+  const lastChar = expression.at(-1);
+  if (operators.includes(value)) {
+    if (!expression) return;
+    expression = operators.includes(lastChar) ? expression.slice(0, -1) + value : expression + value;
+  } else if (value === ".") {
+    const currentNumber = expression.split(/[+\-*/]/).at(-1);
+    if (!currentNumber.includes(".")) expression += currentNumber ? "." : "0.";
   } else {
-    history.textContent = `${formatNumber(a)} ${operator} ${formatNumber(b)} =`;
-    current = formatNumber(result);
+    expression += value;
   }
+  updateDisplay();
+}
 
-  previous = null;
-  operator = null;
-  waitingForOperand = false;
+function calculate() {
+  const answer = calculateExpression(expression);
+  if (answer === null) return;
+  const displayValue = answer === "Error" ? "Error" : formatNumber(answer);
+  updateDisplay(displayValue);
+  if (answer !== "Error") expression = String(answer);
   justCalculated = true;
-  render();
-}
-
-function backspace() {
-  if (waitingForOperand || justCalculated || current === "Error") return reset();
-  current = current.length > 1 ? current.slice(0, -1) : "0";
-  if (current === "-") current = "0";
-  render();
-}
-
-function percent() {
-  if (current === "Error") return reset();
-  current = formatNumber(Number(current) / 100);
-  render();
 }
 
 function handleAction(action) {
-  if (action === "clear") reset();
-  else if (action === "backspace") backspace();
-  else if (action === "decimal") inputDecimal();
-  else if (action === "percent") percent();
-  else if (action === "equals") equals();
+  if (action === "clear") { expression = ""; justCalculated = false; updateDisplay(); }
+  if (action === "delete") { expression = expression.slice(0, -1); justCalculated = false; updateDisplay(); }
+  if (action === "calculate") calculate();
 }
 
-keys.addEventListener("click", (event) => {
+keypad.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
-
-  if (button.dataset.value !== undefined) {
-    const value = button.dataset.value;
-    if (/^[0-9]$/.test(value)) inputDigit(value);
-    else chooseOperator(value);
-  } else {
-    handleAction(button.dataset.action);
-  }
+  if (button.dataset.action) handleAction(button.dataset.action);
+  else if (button.dataset.value === "%") {
+    const number = expression.split(/[+\-*/]/).at(-1);
+    if (number) expression = expression.slice(0, -number.length) + String(Number(number) / 100);
+    updateDisplay();
+  } else appendValue(button.dataset.value);
 });
 
 document.addEventListener("keydown", (event) => {
-  const key = event.key;
-
-  if (/^[0-9]$/.test(key)) {
-    inputDigit(key);
-  } else if (key === ".") {
-    inputDecimal();
-  } else if (["+", "-", "*", "/"].includes(key)) {
-    chooseOperator(key);
-  } else if (key === "Enter" || key === "=") {
-    event.preventDefault();
-    equals();
-  } else if (key === "Backspace") {
-    backspace();
-  } else if (key === "%" ) {
-    percent();
-  } else if (key === "Escape" || key.toLowerCase() === "c") {
-    reset();
-  }
+  if (/^[0-9.+\-*/]$/.test(event.key)) { event.preventDefault(); appendValue(event.key); }
+  if (event.key === "Enter" || event.key === "=") { event.preventDefault(); calculate(); }
+  if (event.key === "Backspace") { event.preventDefault(); handleAction("delete"); }
+  if (event.key === "Escape") handleAction("clear");
+  if (event.key === "%") document.querySelector('[data-value="%"]').click();
 });
-
-reset();
