@@ -1,41 +1,57 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Memory Match</title>
+  <meta name="description" content="A responsive calculator built with HTML, CSS and JavaScript.">
+  <title>Calculator | JavaScript Project</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="game">
-    <header>
-      <p class="eyebrow">JAVASCRIPT GAME PROJECT</p>
-      <h1>Memory Match</h1>
-      <p>Find all 8 matching pairs in the fewest moves and shortest time.</p>
-    </header>
+  <main class="app">
+    <section class="calculator" aria-label="Calculator">
+      <header class="calculator-header">
+        <div>
+          <p class="eyebrow">JAVASCRIPT PROJECT</p>
+          <h1>Calculator</h1>
+        </div>
+        <button id="clear" class="clear-btn" type="button" aria-label="Clear calculator">AC</button>
+      </header>
 
-    <section class="stats">
-      <div><span>Moves</span><strong id="moves">0</strong></div>
-      <div><span>Time</span><strong id="timer">00:00</strong></div>
-      <div><span>Score</span><strong id="score">1000</strong></div>
-      <div><span>Best</span><strong id="best">—</strong></div>
+      <div class="display" aria-live="polite">
+        <div id="history" class="history"></div>
+        <div id="display">0</div>
+      </div>
+
+      <div class="keys">
+        <button type="button" class="key utility" data-action="clear">AC</button>
+        <button type="button" class="key utility" data-action="backspace">⌫</button>
+        <button type="button" class="key utility" data-action="percent">%</button>
+        <button type="button" class="key operator" data-value="/">÷</button>
+
+        <button type="button" class="key" data-value="7">7</button>
+        <button type="button" class="key" data-value="8">8</button>
+        <button type="button" class="key" data-value="9">9</button>
+        <button type="button" class="key operator" data-value="*">×</button>
+
+        <button type="button" class="key" data-value="4">4</button>
+        <button type="button" class="key" data-value="5">5</button>
+        <button type="button" class="key" data-value="6">6</button>
+        <button type="button" class="key operator" data-value="-">−</button>
+
+        <button type="button" class="key" data-value="1">1</button>
+        <button type="button" class="key" data-value="2">2</button>
+        <button type="button" class="key" data-value="3">3</button>
+        <button type="button" class="key operator" data-value="+">+</button>
+
+        <button type="button" class="key zero" data-value="0">0</button>
+        <button type="button" class="key" data-action="decimal">.</button>
+        <button type="button" class="key equals" data-action="equals">=</button>
+      </div>
+
+      <p class="hint">Keyboard supported: 0–9, +, −, ×, ÷, %, Enter, Backspace and Escape</p>
     </section>
-
-    <button id="newGame" class="new-game" type="button">New Game</button>
-    <section id="board" class="board" aria-label="Memory game board"></section>
-    <p id="status" class="status" aria-live="polite">Find all 8 pairs.</p>
   </main>
-
-  <div id="winModal" class="modal hidden">
-    <div class="modal-card">
-      <div class="trophy">🏆</div>
-      <p class="eyebrow">GAME COMPLETE</p>
-      <h2>You matched them all!</h2>
-      <p id="winText"></p>
-      <button id="playAgain" class="new-game" type="button">Play Again</button>
-    </div>
-  </div>
-
   <script src="script.js"></script>
 </body>
 </html>

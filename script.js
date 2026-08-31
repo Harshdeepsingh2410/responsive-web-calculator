@@ -1,172 +1,173 @@
-const SYMBOLS = ["🍎","🚀","🎮","⚡","🐼","🎵","🌟","🧩"];
+const display = document.getElementById("display");
+const history = document.getElementById("history");
+const keys = document.querySelector(".keys");
 
-const board = document.getElementById("board");
-const movesEl = document.getElementById("moves");
-const timerEl = document.getElementById("timer");
-const scoreEl = document.getElementById("score");
-const bestEl = document.getElementById("best");
-const statusEl = document.getElementById("status");
-const newGameBtn = document.getElementById("newGame");
-const modal = document.getElementById("winModal");
-const winText = document.getElementById("winText");
-const playAgainBtn = document.getElementById("playAgain");
+let current = "0";
+let previous = null;
+let operator = null;
+let waitingForOperand = false;
+let justCalculated = false;
 
-let first = null;
-let second = null;
-let locked = false;
-let moves = 0;
-let pairs = 0;
-let seconds = 0;
-let score = 1000;
-let timer = null;
-let started = false;
+function render() {
+  display.textContent = current;
+}
 
-let best = Number(sessionStorage.getItem("memoryBestScore")) || 0;
-bestEl.textContent = best ? best : "—";
+function formatNumber(value) {
+  if (!Number.isFinite(value)) return "Error";
+  const rounded = Number.parseFloat(value.toPrecision(12));
+  return String(rounded);
+}
 
-function shuffle(items) {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
+function calculate(a, b, op) {
+  if (op === "+") return a + b;
+  if (op === "-") return a - b;
+  if (op === "*") return a * b;
+  if (op === "/") return b === 0 ? null : a / b;
+  return b;
+}
+
+function reset() {
+  current = "0";
+  previous = null;
+  operator = null;
+  waitingForOperand = false;
+  justCalculated = false;
+  history.textContent = "";
+  render();
+}
+
+function inputDigit(digit) {
+  if (current === "Error" || waitingForOperand || justCalculated) {
+    current = digit;
+    waitingForOperand = false;
+    justCalculated = false;
+  } else {
+    current = current === "0" ? digit : current + digit;
   }
-  return result;
+  render();
 }
 
-function formatTime(value) {
-  const m = Math.floor(value / 60).toString().padStart(2, "0");
-  const s = (value % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
-
-function calculateScore() {
-  return Math.max(0, 1000 - seconds * 3 - Math.max(0, moves - 8) * 20);
-}
-
-function updateStats() {
-  score = calculateScore();
-  movesEl.textContent = moves;
-  timerEl.textContent = formatTime(seconds);
-  scoreEl.textContent = score;
-  bestEl.textContent = best || "—";
-}
-
-function startTimer() {
-  if (timer !== null) return;
-  timer = setInterval(() => {
-    seconds += 1;
-    updateStats();
-  }, 1000);
-}
-
-function stopTimer() {
-  if (timer !== null) {
-    clearInterval(timer);
-    timer = null;
+function inputDecimal() {
+  if (current === "Error" || waitingForOperand || justCalculated) {
+    current = "0.";
+    waitingForOperand = false;
+    justCalculated = false;
+  } else if (!current.includes(".")) {
+    current += ".";
   }
+  render();
 }
 
-function makeCard(symbol) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "card";
-  button.dataset.symbol = symbol;
-  button.setAttribute("aria-label", "Hidden card");
-  button.innerHTML = `
-    <span class="inner">
-      <span class="face back" aria-hidden="true"></span>
-      <span class="face front" aria-hidden="true">${symbol}</span>
-    </span>`;
-  button.addEventListener("click", () => flipCard(button));
-  return button;
-}
+function chooseOperator(nextOperator) {
+  if (current === "Error") return reset();
 
-function flipCard(card) {
-  if (locked || card === first || card.classList.contains("matched") || card.classList.contains("flipped")) return;
+  const inputValue = Number(current);
 
-  if (!started) {
-    started = true;
-    startTimer();
-  }
-
-  card.classList.add("flipped");
-  card.setAttribute("aria-label", `Card showing ${card.dataset.symbol}`);
-
-  if (!first) {
-    first = card;
+  if (operator && waitingForOperand) {
+    operator = nextOperator;
+    history.textContent = `${formatNumber(previous)} ${operator}`;
     return;
   }
 
-  second = card;
-  moves += 1;
-  updateStats();
+  if (previous === null) {
+    previous = inputValue;
+  } else if (operator) {
+    const result = calculate(previous, inputValue, operator);
+    if (result === null) {
+      current = "Error";
+      history.textContent = "Cannot divide by zero";
+      previous = null;
+      operator = null;
+      waitingForOperand = true;
+      render();
+      return;
+    }
+    current = formatNumber(result);
+    previous = result;
+  }
 
-  if (first.dataset.symbol === second.dataset.symbol) {
-    first.classList.add("matched");
-    second.classList.add("matched");
-    first.disabled = true;
-    second.disabled = true;
-    pairs += 1;
-    statusEl.textContent = `Match found! ${pairs} of 8 pairs completed.`;
-    resetTurn();
+  operator = nextOperator;
+  waitingForOperand = true;
+  justCalculated = false;
+  history.textContent = `${formatNumber(previous)} ${nextOperator}`;
+  render();
+}
 
-    if (pairs === SYMBOLS.length) finish();
+function equals() {
+  if (operator === null || previous === null || current === "Error") return;
+
+  const a = previous;
+  const b = Number(current);
+  const result = calculate(a, b, operator);
+
+  if (result === null) {
+    current = "Error";
+    history.textContent = "Cannot divide by zero";
   } else {
-    locked = true;
-    statusEl.textContent = "Not a match. Try again.";
-    setTimeout(() => {
-      first.classList.remove("flipped");
-      second.classList.remove("flipped");
-      first.setAttribute("aria-label", "Hidden card");
-      second.setAttribute("aria-label", "Hidden card");
-      resetTurn();
-    }, 700);
-  }
-}
-
-function resetTurn() {
-  first = null;
-  second = null;
-  locked = false;
-}
-
-function finish() {
-  stopTimer();
-  score = calculateScore();
-
-  if (score > best) {
-    best = score;
-    sessionStorage.setItem("memoryBestScore", String(best));
+    history.textContent = `${formatNumber(a)} ${operator} ${formatNumber(b)} =`;
+    current = formatNumber(result);
   }
 
-  updateStats();
-  statusEl.textContent = "All pairs matched!";
-  winText.textContent = `Completed in ${moves} moves and ${formatTime(seconds)} with a score of ${score}.`;
-  modal.classList.remove("hidden");
+  previous = null;
+  operator = null;
+  waitingForOperand = false;
+  justCalculated = true;
+  render();
 }
 
-function newGame() {
-  stopTimer();
-  first = null;
-  second = null;
-  locked = false;
-  moves = 0;
-  pairs = 0;
-  seconds = 0;
-  score = 1000;
-  started = false;
-
-  modal.classList.add("hidden");
-  board.replaceChildren();
-
-  shuffle([...SYMBOLS, ...SYMBOLS]).forEach(symbol => {
-    board.appendChild(makeCard(symbol));
-  });
-
-  statusEl.textContent = "Find all 8 pairs.";
-  updateStats();
+function backspace() {
+  if (waitingForOperand || justCalculated || current === "Error") return reset();
+  current = current.length > 1 ? current.slice(0, -1) : "0";
+  if (current === "-") current = "0";
+  render();
 }
 
-newGameBtn.addEventListener("click", newGame);
-playAgainBtn.addEventListener("click", newGame);
-newGame();
+function percent() {
+  if (current === "Error") return reset();
+  current = formatNumber(Number(current) / 100);
+  render();
+}
+
+function handleAction(action) {
+  if (action === "clear") reset();
+  else if (action === "backspace") backspace();
+  else if (action === "decimal") inputDecimal();
+  else if (action === "percent") percent();
+  else if (action === "equals") equals();
+}
+
+keys.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+
+  if (button.dataset.value !== undefined) {
+    const value = button.dataset.value;
+    if (/^[0-9]$/.test(value)) inputDigit(value);
+    else chooseOperator(value);
+  } else {
+    handleAction(button.dataset.action);
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  const key = event.key;
+
+  if (/^[0-9]$/.test(key)) {
+    inputDigit(key);
+  } else if (key === ".") {
+    inputDecimal();
+  } else if (["+", "-", "*", "/"].includes(key)) {
+    chooseOperator(key);
+  } else if (key === "Enter" || key === "=") {
+    event.preventDefault();
+    equals();
+  } else if (key === "Backspace") {
+    backspace();
+  } else if (key === "%" ) {
+    percent();
+  } else if (key === "Escape" || key.toLowerCase() === "c") {
+    reset();
+  }
+});
+
+reset();
